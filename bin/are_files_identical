@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# this script returns 0 if all its arguments have the same inode
+# for example ~/Workspace and /home/gabriel/Workspace
+# it returns 43 if one argument is not a file (cannot find inode)
+# and 42 if one inode is different
+if [ $# -lt 2 ]
+then
+    echo You must at least compare 2 files, $# given. >&2
+    exit 44
+fi
+
+for FILE in $*
+do
+    FILE_INODE=`ls -id $FILE | cut -f 1 -d ' '`
+    if [ ! $FILE_INODE ]
+    then
+        exit 43
+    fi
+
+    if [ $LAST_FILE_INODE ] && [ $FILE_INODE != $LAST_FILE_INODE ]
+    then
+        exit 42
+    fi
+
+    LAST_FILE_INODE=$FILE_INODE
+done
+
+exit 0

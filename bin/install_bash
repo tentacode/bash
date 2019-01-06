@@ -1,0 +1,88 @@
+#!/bin/bash
+
+CURRENT_DIRECTORY=`dirname $0`
+if [ -L $CURRENT_DIRECTORY ]
+then
+    CURRENT_DIRECTORY=`readlink $CURRENT_DIRECTORY`
+fi
+
+PATH=$PATH:$CURRENT_DIRECTORY/../bin
+
+BASH_PROFILE_PATH=~/.bash_profile
+BASH_PROFILE_DESTINATION="$CURRENT_DIRECTORY/../dotfiles/.bash_profile"
+BASH_BIN_DIRECTORY=~/.bash_bin
+BASH_BIN_DESTINATION="$CURRENT_DIRECTORY/../bin"
+
+function ask_delete_bash_profile
+{
+    read -p "Do you want to override ~/.bash_profile ? [N/y] " OVERRIDE_BASH
+    if [ $OVERRIDE_BASH != 'y' ] && [ $OVERRIDE_BASH != 'Y' ]
+    then
+        echo "Ok, see you later then! 👋"
+        exit 42
+    fi
+
+    echo "Removing ~/.bash_profile"
+    rm $BASH_PROFILE_PATH
+}
+
+# bash bin directory already exists
+if [ -e $BASH_BIN_DIRECTORY ]
+then
+    # it should be a symlink
+    if [ ! -L $BASH_BIN_DIRECTORY ]
+    then
+        echo "$BASH_BIN_DIRECTORY exists and is not a symlink, please delete it and run make install again."
+        exit 42
+    fi
+
+    # it should be linked to the /bin directory of this repository
+    SYMLINK_DESTINATION=`readlink $BASH_BIN_DIRECTORY`
+    if ! are_files_identical $SYMLINK_DESTINATION $BASH_BIN_DESTINATION
+    then
+        echo "A symbolic link from $BASH_BIN_DESTINATION already exists to $SYMLINK_DESTINATION, please delete it and run make install again."
+        exit 42
+    fi
+fi
+
+# bash profile file exist and it's not a symlink
+if [ -e $BASH_PROFILE_PATH ] && [ ! -L $BASH_PROFILE_PATH ]
+then
+    echo "The $BASH_PROFILE_PATH file already exists."
+    ask_delete_bash_profile
+fi
+
+# bash profile is a symlink…
+if [ -L $BASH_PROFILE_PATH ]
+then
+    SYMLINK_DESTINATION=`readlink $BASH_PROFILE_PATH`
+
+    # … but it's not symlinked to my bash_profile
+    if ! are_files_identical $SYMLINK_DESTINATION $BASH_PROFILE_DESTINATION
+    then
+        echo "A symbolic link from $BASH_PROFILE_PATH already exists to $SYMLINK_DESTINATION."
+        ask_delete_bash_profile
+    fi
+fi
+
+# creating symlink to bash_profile if needed
+if [ ! -L $BASH_PROFILE_PATH ]
+then
+    ln -s $BASH_PROFILE_DESTINATION $BASH_PROFILE_PATH
+
+    echo "$BASH_PROFILE_PATH has been installed! 👌"
+else
+    echo "$BASH_PROFILE_PATH is already installed. 🤔"
+fi
+
+# creating symlink to bash_bin if needed
+if [ ! -L $BASH_BIN_DIRECTORY ]
+then
+    ln -s $BASH_BIN_DESTINATION $BASH_BIN_DIRECTORY
+
+    echo "$BASH_BIN_DIRECTORY has been installed! 👌"
+else
+    echo "$BASH_BIN_DIRECTORY is already installed. 🤔"
+fi
+
+echo "You can reload the $BASH_PROFILE_PATH by calling : source $BASH_PROFILE_PATH"
