@@ -27,7 +27,7 @@ function error_code_prompt()
 
 function git_prompt()
 {
-    local CURRENT_GIT_BRANCH=`git branch | grep -E '^\*' | sed s/\*\ //`
+    local CURRENT_GIT_BRANCH=`git branch 2> /dev/null | grep -E '^\*' | sed s/\*\ //`
     if [ ! $CURRENT_GIT_BRANCH ]
     then
         return 42
